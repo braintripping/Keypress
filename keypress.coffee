@@ -159,7 +159,7 @@ class keypress.Listener
         # is pressed, but cmd isn't in them. This is so they don't
         # accidentally rapid fire due to our hack-around for the cmd
         # key bug and having to fake keyups.
-        if _metakey is "cmd" and "cmd" in @_keys_down and "cmd" not in combo_keys
+        if _metakey is "cmd" and "cmd" in @_keys_down and "cmd" not in combo_keys and combo_keys.length > 1
             return false
         return true
 

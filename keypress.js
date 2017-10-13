@@ -171,7 +171,7 @@ Combo options available and their defaults:
     };
 
     Listener.prototype._cmd_bug_check = function(combo_keys) {
-      if (_metakey === "cmd" && indexOf.call(this._keys_down, "cmd") >= 0 && indexOf.call(combo_keys, "cmd") < 0) {
+      if (_metakey === "cmd" && indexOf.call(this._keys_down, "cmd") >= 0 && indexOf.call(combo_keys, "cmd") < 0 && combo_keys.length > 1) {
         return false;
       }
       return true;
