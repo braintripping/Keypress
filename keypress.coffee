@@ -109,10 +109,7 @@ class keypress.Listener
         @element = element or document.body
 
         attach_handler = (target, event, handler) ->
-            if target.addEventListener
-                target.addEventListener event, handler
-            else if target.attachEvent
-                target.attachEvent "on#{event}", handler
+            goog.events.listen target, event, handler, true
 
             return handler
 

@@ -116,11 +116,7 @@ Combo options available and their defaults:
       }
       this.element = element || document.body;
       attach_handler = function(target, event, handler) {
-        if (target.addEventListener) {
-          target.addEventListener(event, handler);
-        } else if (target.attachEvent) {
-          target.attachEvent("on" + event, handler);
-        }
+        goog.events.listen(target, event, handler, true);
         return handler;
       };
       this.keydown_event = attach_handler(this.element, "keydown", (function(_this) {
