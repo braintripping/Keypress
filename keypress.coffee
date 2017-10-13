@@ -747,9 +747,11 @@ _validate_combo = (combo) ->
 
 _convert_to_shifted_key = (key, e) ->
     return false unless e.shiftKey
-    k = _keycode_shifted_keys[key]
-    return k if k?
-    return false
+
+    if e.key? and e.key of _keycode_shifted_key_targets
+        return e.key
+    else
+        return _keycode_shifted_keys[key] or false
 
 ##########################
 # Key Mapping Dictionaries
@@ -798,6 +800,29 @@ _keycode_shifted_keys =
     "8"     : "*"
     "9"     : "("
     "0"     : ")"
+
+_keycode_shifted_key_targets =
+    "?"     : true
+    ">"     : true
+    "<"     : true
+    "\\"    : true
+    ":"     : true
+    "{"     : true
+    "}"     : true
+    "|"     : true
+    "~"     : true
+    "+"     : true
+    "_"     : true
+    "!"     : true
+    "@"     : true
+    "#"     : true
+    "$"     : true
+    "%"     : true
+    "^"     : true
+    "&"     : true
+    "*"     : true
+    "("     : true
+    ")"     : true
 
 _keycode_dictionary = 
     0   : "\\"          # Firefox reports this keyCode when shift is held

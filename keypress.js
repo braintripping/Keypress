@@ -41,7 +41,7 @@ Combo options available and their defaults:
  */
 
 (function() {
-  var Combo, _change_keycodes_by_browser, _compare_arrays, _compare_arrays_sorted, _convert_key_to_readable, _convert_to_shifted_key, _decide_meta_key, _factory_defaults, _filter_array, _index_of_in_array, _is_array_in_array, _is_array_in_array_sorted, _key_is_valid, _keycode_alternate_names, _keycode_dictionary, _keycode_shifted_keys, _log_error, _metakey, _modifier_event_mapping, _modifier_keys, _validate_combo, keypress,
+  var Combo, _change_keycodes_by_browser, _compare_arrays, _compare_arrays_sorted, _convert_key_to_readable, _convert_to_shifted_key, _decide_meta_key, _factory_defaults, _filter_array, _index_of_in_array, _is_array_in_array, _is_array_in_array_sorted, _key_is_valid, _keycode_alternate_names, _keycode_dictionary, _keycode_shifted_key_targets, _keycode_shifted_keys, _log_error, _metakey, _modifier_event_mapping, _modifier_keys, _validate_combo, keypress,
     hasProp = {}.hasOwnProperty,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -957,15 +957,14 @@ Combo options available and their defaults:
   };
 
   _convert_to_shifted_key = function(key, e) {
-    var k;
     if (!e.shiftKey) {
       return false;
     }
-    k = _keycode_shifted_keys[key];
-    if (k != null) {
-      return k;
+    if ((e.key != null) && e.key in _keycode_shifted_key_targets) {
+      return e.key;
+    } else {
+      return _keycode_shifted_keys[key] || false;
     }
-    return false;
   };
 
   _modifier_event_mapping = {
@@ -1013,6 +1012,30 @@ Combo options available and their defaults:
     "8": "*",
     "9": "(",
     "0": ")"
+  };
+
+  _keycode_shifted_key_targets = {
+    "?": true,
+    ">": true,
+    "<": true,
+    "\\": true,
+    ":": true,
+    "{": true,
+    "}": true,
+    "|": true,
+    "~": true,
+    "+": true,
+    "_": true,
+    "!": true,
+    "@": true,
+    "#": true,
+    "$": true,
+    "%": true,
+    "^": true,
+    "&": true,
+    "*": true,
+    "(": true,
+    ")": true
   };
 
   _keycode_dictionary = {
