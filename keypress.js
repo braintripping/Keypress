@@ -578,7 +578,7 @@ Combo options available and their defaults:
     };
 
     Listener.prototype._key_up = function(key, e) {
-      var active_combo, active_combos_length, combo, combos, i, l, len, len1, len2, m, n, o, ref, ref1, ref2, ref3, sequence_combo, shifted_key, unshifted_key;
+      var active_combo, active_combos_length, combo, combos, i, item, key_here, l, len, len1, len2, len3, m, n, o, p, ref, ref1, ref2, ref3, ref4, sequence_combo, shifted_key, unshifted_key;
       unshifted_key = key;
       shifted_key = _convert_to_shifted_key(key, e);
       if (e.shiftKey && shifted_key && (indexOf.call(this._keys_down, shifted_key) >= 0)) {
@@ -588,32 +588,40 @@ Combo options available and their defaults:
       if (sequence_combo) {
         this._fire("keyup", sequence_combo, e);
       }
-      for (i = l = 0, ref = this._keys_down.length; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
-        if ((ref1 = this._keys_down[i]) === key || ref1 === shifted_key || ref1 === unshifted_key) {
+      key_here = false;
+      ref = [key, shifted_key, unshifted_key];
+      for (l = 0, len = ref.length; l < len; l++) {
+        item = ref[l];
+        if (indexOf.call(this._keys_down, item) >= 0) {
+          key_here = true;
+        }
+      }
+      if (!key_here) {
+        return false;
+      }
+      for (i = m = 0, ref1 = this._keys_down.length; 0 <= ref1 ? m < ref1 : m > ref1; i = 0 <= ref1 ? ++m : --m) {
+        if ((ref2 = this._keys_down[i]) === key || ref2 === shifted_key || ref2 === unshifted_key) {
           this._keys_down.splice(i, 1);
           break;
         }
       }
-      if (indexOf.call(this._keys_down, key) < 0) {
-        return false;
-      }
       active_combos_length = this._active_combos.length;
       combos = [];
-      ref2 = this._active_combos;
-      for (m = 0, len = ref2.length; m < len; m++) {
-        active_combo = ref2[m];
+      ref3 = this._active_combos;
+      for (n = 0, len1 = ref3.length; n < len1; n++) {
+        active_combo = ref3[n];
         if (indexOf.call(active_combo.keys, key) >= 0) {
           combos.push(active_combo);
         }
       }
-      for (n = 0, len1 = combos.length; n < len1; n++) {
-        combo = combos[n];
+      for (o = 0, len2 = combos.length; o < len2; o++) {
+        combo = combos[o];
         this._handle_combo_up(combo, e, key);
       }
       if (active_combos_length > 1) {
-        ref3 = this._active_combos;
-        for (o = 0, len2 = ref3.length; o < len2; o++) {
-          active_combo = ref3[o];
+        ref4 = this._active_combos;
+        for (p = 0, len3 = ref4.length; p < len3; p++) {
+          active_combo = ref4[p];
           if (active_combo === void 0 || indexOf.call(combos, active_combo) >= 0) {
             continue;
           }

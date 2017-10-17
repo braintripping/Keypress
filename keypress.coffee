@@ -474,13 +474,17 @@ class keypress.Listener
         sequence_combo = @_get_sequence key
         @_fire("keyup", sequence_combo, e) if sequence_combo
 
+        # Remove from the list
+        key_here = false
+        for item in [key, shifted_key, unshifted_key]
+            key_here = true if item in @_keys_down
+        return false unless key_here
+
         for i in [0...@_keys_down.length]
             if @_keys_down[i] in [key, shifted_key, unshifted_key]
                 @_keys_down.splice i, 1
                 break
 
-        # Remove from the list
-        return false unless key in @_keys_down
         # Store this for later cleanup
         active_combos_length = @_active_combos.length
 
