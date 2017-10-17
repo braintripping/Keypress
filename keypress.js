@@ -41,7 +41,7 @@ Combo options available and their defaults:
  */
 
 (function() {
-  var Combo, _change_keycodes_by_browser, _compare_arrays, _compare_arrays_sorted, _convert_key_to_readable, _convert_to_shifted_key, _decide_meta_key, _factory_defaults, _filter_array, _index_of_in_array, _is_array_in_array, _is_array_in_array_sorted, _key_is_valid, _keycode_alternate_names, _keycode_dictionary, _keycode_shifted_key_targets, _keycode_shifted_keys, _log_error, _metakey, _modifier_event_mapping, _modifier_keys, _validate_combo, keypress,
+  var Combo, _change_keycodes_by_browser, _compare_arrays, _compare_arrays_sorted, _convert_key_to_readable, _convert_to_shifted_key, _decide_meta_key, _factory_defaults, _filter_array, _index_of_in_array, _is_array_in_array, _is_array_in_array_sorted, _key_is_valid, _keycode_alternate_names, _keycode_dictionary, _keycode_shifted_key_targets, _keycode_shifted_keys, _log_error, _metakey, _modifier_event_mapping, _modifier_keys, _validate_combo, isSubsetOf, keypress,
     hasProp = {}.hasOwnProperty,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -58,6 +58,17 @@ Combo options available and their defaults:
   _modifier_keys = ["meta", "alt", "option", "ctrl", "shift", "cmd"];
 
   _metakey = "ctrl";
+
+  isSubsetOf = function(a1, a2) {
+    var item, l, len;
+    for (l = 0, len = a1.length; l < len; l++) {
+      item = a1[l];
+      if (a2.indexOf(a1) < 0) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   keypress = {};
 
@@ -570,31 +581,21 @@ Combo options available and their defaults:
       var active_combo, active_combos_length, combo, combos, i, l, len, len1, len2, m, n, o, ref, ref1, ref2, ref3, sequence_combo, shifted_key, unshifted_key;
       unshifted_key = key;
       shifted_key = _convert_to_shifted_key(key, e);
-      if (shifted_key) {
+      if (e.shiftKey && shifted_key && (indexOf.call(this._keys_down, shifted_key) >= 0)) {
         key = shifted_key;
-      }
-      shifted_key = _keycode_shifted_keys[unshifted_key];
-      if (e.shiftKey) {
-        if (!(shifted_key && indexOf.call(this._keys_down, shifted_key) >= 0)) {
-          key = unshifted_key;
-        }
-      } else {
-        if (!(unshifted_key && indexOf.call(this._keys_down, unshifted_key) >= 0)) {
-          key = shifted_key;
-        }
       }
       sequence_combo = this._get_sequence(key);
       if (sequence_combo) {
         this._fire("keyup", sequence_combo, e);
-      }
-      if (indexOf.call(this._keys_down, key) < 0) {
-        return false;
       }
       for (i = l = 0, ref = this._keys_down.length; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
         if ((ref1 = this._keys_down[i]) === key || ref1 === shifted_key || ref1 === unshifted_key) {
           this._keys_down.splice(i, 1);
           break;
         }
+      }
+      if (indexOf.call(this._keys_down, key) < 0) {
+        return false;
       }
       active_combos_length = this._active_combos.length;
       combos = [];

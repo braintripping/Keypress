@@ -54,6 +54,12 @@ _modifier_keys = ["meta", "alt", "option", "ctrl", "shift", "cmd"]
 
 _metakey = "ctrl"
 
+isSubsetOf = (a1, a2) ->
+    for item in a1
+        if a2.indexOf(a1) < 0
+            return false
+    true
+
 ###########################
 # Public object and Classes
 ###########################
@@ -164,7 +170,7 @@ class keypress.Listener
         # If we've pressed a combo, or if we are working towards
         # one, we should prevent the default keydown event.
         if (should_prevent or @should_suppress_event_defaults) and not @should_force_event_defaults
-            if e.preventDefault then e.preventDefault() else e.returnValue = false    
+            if e.preventDefault then e.preventDefault() else e.returnValue = false
             e.stopPropagation() if e.stopPropagation
 
     # Tracking Combos
@@ -190,7 +196,7 @@ class keypress.Listener
         @_fuzzy_match_combo_arrays keys_down, (match) =>
             return if match in active_combos
             active_combos.push(match) unless match.is_solitary or not @_cmd_bug_check match.keys
-        
+
         return active_combos
 
     _get_potential_combos: (key) ->
@@ -344,7 +350,7 @@ class keypress.Listener
             @_key_down key, e
         else
             @_key_up key, e
-        
+
     _fire: (event, combo, key_event, is_autorepeat) ->
         # Only fire this event if the function is defined
         if typeof combo["on_" + event] is "function"
@@ -402,7 +408,7 @@ class keypress.Listener
         for mod, event_mod of _modifier_event_mapping
             continue if mod is key
             if mod in @_keys_down and not e[event_mod]
-                # The Windows key will think it is the cmd key, but won't trigger the event mod 
+                # The Windows key will think it is the cmd key, but won't trigger the event mod
                 continue if mod is "cmd" and _metakey isnt "cmd"
                 for i in [0...@_keys_down.length]
                     @_keys_down.splice(i, 1) if @_keys_down[i] is mod
@@ -460,25 +466,21 @@ class keypress.Listener
         # Check if we're holding shift
         unshifted_key = key
         shifted_key = _convert_to_shifted_key key, e
-        key = shifted_key if shifted_key
-        shifted_key = _keycode_shifted_keys[unshifted_key]
-        # We have to make sure the key matches to what we had in _keys_down
-        if e.shiftKey
-            key = unshifted_key unless shifted_key and shifted_key in @_keys_down
-        else
-            key = shifted_key unless unshifted_key and unshifted_key in @_keys_down
+
+        if e.shiftKey and shifted_key and (shifted_key in @_keys_down)
+            key = shifted_key
 
         # Check if we have a keyup firing
         sequence_combo = @_get_sequence key
         @_fire("keyup", sequence_combo, e) if sequence_combo
 
-        # Remove from the list
-        return false unless key in @_keys_down
         for i in [0...@_keys_down.length]
             if @_keys_down[i] in [key, shifted_key, unshifted_key]
                 @_keys_down.splice i, 1
                 break
 
+        # Remove from the list
+        return false unless key in @_keys_down
         # Store this for later cleanup
         active_combos_length = @_active_combos.length
 
@@ -504,7 +506,7 @@ class keypress.Listener
 
     _handle_combo_up: (combo, e, key) ->
         @_prevent_default e, (combo and combo.prevent_default)
-        
+
         # Check if any keys from this combo are still being held.
         keys_remaining = @_keys_remain combo
 
@@ -559,7 +561,7 @@ class keypress.Listener
             if combo_dictionary[property] is undefined
                 combo_dictionary[property] = value
         combo = new Combo combo_dictionary
-        
+
         if _validate_combo combo
             @_registered_combos.push combo
             return combo
@@ -731,7 +733,7 @@ _validate_combo = (combo) ->
         non_modifier_keys = combo.keys.slice()
         for mod_key in _modifier_keys
             if (i = _index_of_in_array.call(non_modifier_keys, mod_key)) > -1
-                non_modifier_keys.splice(i, 1) 
+                non_modifier_keys.splice(i, 1)
         if non_modifier_keys.length > 1
             _log_error "META and CMD key combos cannot have more than 1 non-modifier keys", combo, non_modifier_keys
             validated = false
@@ -824,7 +826,7 @@ _keycode_shifted_key_targets =
     "("     : true
     ")"     : true
 
-_keycode_dictionary = 
+_keycode_dictionary =
     0   : "\\"          # Firefox reports this keyCode when shift is held
     8   : "backspace"
     9   : "tab"
@@ -902,7 +904,7 @@ _keycode_dictionary =
     108 : "num_enter"
     109 : "num_subtract"
     110 : "num_decimal"
-    111 : "num_divide" 
+    111 : "num_divide"
     112 : "f1"
     113 : "f2"
     114 : "f3"
