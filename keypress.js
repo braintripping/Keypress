@@ -104,17 +104,12 @@ Combo options available and their defaults:
   keypress.Listener = (function() {
     function Listener(element, defaults) {
       var attach_handler, property, value;
-      if ((typeof jQuery !== "undefined" && jQuery !== null) && element instanceof jQuery) {
-        if (element.length !== 1) {
-          _log_error("Warning: your jQuery selector should have exactly one object.");
-        }
-        element = element[0];
-      }
       this.should_suppress_event_defaults = false;
       this.should_force_event_defaults = false;
       this.sequence_delay = 800;
       this._registered_combos = [];
       this._keys_down = [];
+      this._down_mappings = {};
       this._active_combos = [];
       this._sequence = [];
       this._sequence_timer = null;
@@ -539,6 +534,7 @@ Combo options available and their defaults:
       }
       if (indexOf.call(this._keys_down, key) < 0) {
         this._keys_down.push(key);
+        this._down_mappings[e.keyCode] = key;
       }
     };
 
@@ -588,7 +584,7 @@ Combo options available and their defaults:
       if (sequence_combo) {
         this._fire("keyup", sequence_combo, e);
       }
-      key_here = false;
+      key_here = e.keyCode in this._down_mappings;
       ref = [key, shifted_key, unshifted_key];
       for (l = 0, len = ref.length; l < len; l++) {
         item = ref[l];
@@ -600,11 +596,12 @@ Combo options available and their defaults:
         return false;
       }
       for (i = m = 0, ref1 = this._keys_down.length; 0 <= ref1 ? m < ref1 : m > ref1; i = 0 <= ref1 ? ++m : --m) {
-        if ((ref2 = this._keys_down[i]) === key || ref2 === shifted_key || ref2 === unshifted_key) {
+        if ((ref2 = this._keys_down[i]) === key || ref2 === shifted_key || ref2 === unshifted_key || ref2 === this._down_mappings[e.keyCode]) {
           this._keys_down.splice(i, 1);
           break;
         }
       }
+      delete this._down_mappings[e.keyCode];
       active_combos_length = this._active_combos.length;
       combos = [];
       ref3 = this._active_combos;

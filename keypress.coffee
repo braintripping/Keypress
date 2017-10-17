@@ -89,11 +89,6 @@ class Combo
 
 class keypress.Listener
     constructor:(element, defaults) ->
-        # jQuery proofing
-        if jQuery? and element instanceof jQuery
-            if element.length != 1
-                _log_error "Warning: your jQuery selector should have exactly one object."
-            element = element[0]
 
         # Public properties
         @should_suppress_event_defaults = false
@@ -103,6 +98,7 @@ class keypress.Listener
         # Private properties
         @_registered_combos = []
         @_keys_down = []
+        @_down_mappings = {}
         @_active_combos = []
         @_sequence = []
         @_sequence_timer = null
@@ -424,6 +420,7 @@ class keypress.Listener
 
         if key not in @_keys_down
             @_keys_down.push key
+            @_down_mappings[e.keyCode] = key
         return
 
     _handle_combo_down: (combo, potential_combos, key, e) ->
@@ -475,16 +472,16 @@ class keypress.Listener
         @_fire("keyup", sequence_combo, e) if sequence_combo
 
         # Remove from the list
-        key_here = false
+        key_here = e.keyCode of @_down_mappings
         for item in [key, shifted_key, unshifted_key]
             key_here = true if item in @_keys_down
         return false unless key_here
 
         for i in [0...@_keys_down.length]
-            if @_keys_down[i] in [key, shifted_key, unshifted_key]
+            if @_keys_down[i] in [key, shifted_key, unshifted_key, @_down_mappings[e.keyCode]]
                 @_keys_down.splice i, 1
                 break
-
+        delete @_down_mappings[e.keyCode]
         # Store this for later cleanup
         active_combos_length = @_active_combos.length
 
