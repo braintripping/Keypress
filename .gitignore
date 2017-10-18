@@ -5,3 +5,4 @@ test/keypress.js
 test/tests.js
 .build*
 node_modules/
+.idea
