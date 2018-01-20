@@ -128,14 +128,24 @@ class keypress.Listener
 
         attach_handler = (target, event, handler) ->
             # MH: use google closure listening, for capture phase
-            goog.events.listen target, event, handler, true
+            goog.events.listen target, event, ((e) -> handler(e.getBrowserEvent())), true
 
             return handler
 
         @keydown_event = attach_handler @element, "keydown", (e) =>
             e = e or window.event
+    
+            # This seems to be Mac specific weirdness, so we'll target "cmd" as metaKey
+            # Force a keyup for non-modifier keys when command is held because they don't fire
+            should_auto_keyup = _metakey is "cmd" and "cmd" in @_keys_down and _convert_key_to_readable(e.keyCode ? e.key) not in ["cmd", "shift", "alt", "caps", "tab"]
+            
             @_receive_input e, true
-            @_bug_catcher e
+            
+            if should_auto_keyup
+                # Note: we're currently ignoring the fact that this doesn't catch the bug that a keyup
+                # will not fire if you keydown a combo, then press and hold cmd, then keyup the combo.
+                # Perhaps we should fire keyup on all active combos when we press cmd?
+                @_receive_input e, false
 
         @keyup_event = attach_handler @element, "keyup", (e) =>
             e = e or window.event
@@ -151,22 +161,13 @@ class keypress.Listener
     destroy: () ->
         remove_handler = (target, event, handler) ->
             # MH: use google closure listening, for capture phase
-            goog.events.unlisten target, event, handler, true
+            goog.events.unlisten target, event, ((e) -> handler(e.getBrowserEvent())), true
 
         remove_handler @element, "keydown", @keydown_event
         remove_handler @element, "keyup", @keyup_event
         remove_handler window, "blur", @blur_event
 
     # Helper Methods
-
-    _bug_catcher: (e) ->
-        # This seems to be Mac specific weirdness, so we'll target "cmd" as metaKey
-        # Force a keyup for non-modifier keys when command is held because they don't fire
-        if _metakey is "cmd" and "cmd" in @_keys_down and _convert_key_to_readable(e.keyCode ? e.key) not in ["cmd", "shift", "alt", "caps", "tab"]
-            @_receive_input e, false
-        # Note: we're currently ignoring the fact that this doesn't catch the bug that a keyup
-        # will not fire if you keydown a combo, then press and hold cmd, then keyup the combo.
-        # Perhaps we should fire keyup on all active combos when we press cmd?
 
     _cmd_bug_check: (combo_keys) ->
         # We don't want to allow combos to activate if the cmd key

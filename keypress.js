@@ -142,14 +142,20 @@ Combo options available and their defaults:
       }
       this.element = element || document.body;
       attach_handler = function(target, event, handler) {
-        goog.events.listen(target, event, handler, true);
+        goog.events.listen(target, event, (function(e) {
+          return handler(e.getBrowserEvent());
+        }), true);
         return handler;
       };
       this.keydown_event = attach_handler(this.element, "keydown", (function(_this) {
         return function(e) {
+          var ref, ref1, should_auto_keyup;
           e = e || window.event;
+          should_auto_keyup = _metakey === "cmd" && indexOf.call(_this._keys_down, "cmd") >= 0 && ((ref = _convert_key_to_readable((ref1 = e.keyCode) != null ? ref1 : e.key)) !== "cmd" && ref !== "shift" && ref !== "alt" && ref !== "caps" && ref !== "tab");
           _this._receive_input(e, true);
-          return _this._bug_catcher(e);
+          if (should_auto_keyup) {
+            return _this._receive_input(e, false);
+          }
         };
       })(this));
       this.keyup_event = attach_handler(this.element, "keyup", (function(_this) {
@@ -174,18 +180,13 @@ Combo options available and their defaults:
     Listener.prototype.destroy = function() {
       var remove_handler;
       remove_handler = function(target, event, handler) {
-        return goog.events.unlisten(target, event, handler, true);
+        return goog.events.unlisten(target, event, (function(e) {
+          return handler(e.getBrowserEvent());
+        }), true);
       };
       remove_handler(this.element, "keydown", this.keydown_event);
       remove_handler(this.element, "keyup", this.keyup_event);
       return remove_handler(window, "blur", this.blur_event);
-    };
-
-    Listener.prototype._bug_catcher = function(e) {
-      var ref, ref1;
-      if (_metakey === "cmd" && indexOf.call(this._keys_down, "cmd") >= 0 && ((ref = _convert_key_to_readable((ref1 = e.keyCode) != null ? ref1 : e.key)) !== "cmd" && ref !== "shift" && ref !== "alt" && ref !== "caps" && ref !== "tab")) {
-        return this._receive_input(e, false);
-      }
     };
 
     Listener.prototype._cmd_bug_check = function(combo_keys) {
