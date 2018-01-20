@@ -41,7 +41,7 @@ Combo options available and their defaults:
  */
 
 (function() {
-  var Combo, _change_keycodes_by_browser, _compare_arrays, _compare_arrays_sorted, _convert_key_to_readable, _convert_to_shifted_key, _decide_meta_key, _factory_defaults, _filter_array, _index_of_in_array, _is_array_in_array, _is_array_in_array_sorted, _key_is_valid, _keycode_alternate_names, _keycode_dictionary, _keycode_shifted_keys, _keycode_shifted_targets, _log_error, _metakey, _modifier_event_mapping, _modifier_keys, _validate_combo, keypress, normalize_combo,
+  var Combo, _change_keycodes_by_browser, _compare_arrays, _compare_arrays_sorted, _convert_key_to_readable, _decide_meta_key, _factory_defaults, _filter_array, _index_of_in_array, _is_array_in_array, _is_array_in_array_sorted, _key_is_valid, _keycode_alternate_names, _keycode_dictionary, _log_error, _metakey, _modifier_event_mapping, _modifier_keys, _validate_combo, keypress, normalize_combo,
     hasProp = {}.hasOwnProperty,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -501,11 +501,7 @@ Combo options available and their defaults:
     };
 
     Listener.prototype._key_down = function(key, e) {
-      var combo, combos, event_mod, i, l, len, len1, m, mod, n, potential, potential_combos, ref, sequence_combo, shifted_key;
-      shifted_key = _convert_to_shifted_key(key, e);
-      if (shifted_key) {
-        key = shifted_key;
-      }
+      var combo, combos, event_mod, i, l, len, len1, m, mod, n, potential, potential_combos, ref, sequence_combo;
       this._add_key_to_sequence(key, e);
       sequence_combo = this._get_sequence(key);
       if (sequence_combo) {
@@ -590,21 +586,7 @@ Combo options available and their defaults:
     };
 
     Listener.prototype._key_up = function(key, e) {
-      var active_combo, active_combos_length, combo, combos, i, l, len, len1, len2, m, n, o, ref, ref1, ref2, ref3, sequence_combo, shifted_key, unshifted_key;
-      unshifted_key = key;
-      shifted_key = _convert_to_shifted_key(key, e);
-      if (shifted_key) {
-        key = shifted_key;
-      }
-      if (e.shiftKey) {
-        if (!(shifted_key && indexOf.call(this._keys_down, shifted_key) >= 0)) {
-          key = unshifted_key;
-        }
-      } else {
-        if (!(unshifted_key && indexOf.call(this._keys_down, unshifted_key) >= 0)) {
-          key = shifted_key;
-        }
-      }
+      var active_combo, active_combos_length, combo, combos, i, l, len, len1, len2, m, n, o, ref, ref1, ref2, sequence_combo;
       sequence_combo = this._get_sequence(key);
       if (sequence_combo) {
         this._fire("keyup", sequence_combo, e);
@@ -613,16 +595,16 @@ Combo options available and their defaults:
         return false;
       }
       for (i = l = 0, ref = this._keys_down.length; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
-        if ((ref1 = this._keys_down[i]) === key || ref1 === shifted_key || ref1 === unshifted_key) {
+        if (this._keys_down[i] === key) {
           this._keys_down.splice(i, 1);
           break;
         }
       }
       active_combos_length = this._active_combos.length;
       combos = [];
-      ref2 = this._active_combos;
-      for (m = 0, len = ref2.length; m < len; m++) {
-        active_combo = ref2[m];
+      ref1 = this._active_combos;
+      for (m = 0, len = ref1.length; m < len; m++) {
+        active_combo = ref1[m];
         if (indexOf.call(active_combo.keys, key) >= 0) {
           combos.push(active_combo);
         }
@@ -632,9 +614,9 @@ Combo options available and their defaults:
         this._handle_combo_up(combo, e, key);
       }
       if (active_combos_length > 1) {
-        ref3 = this._active_combos;
-        for (o = 0, len2 = ref3.length; o < len2; o++) {
-          active_combo = ref3[o];
+        ref2 = this._active_combos;
+        for (o = 0, len2 = ref2.length; o < len2; o++) {
+          active_combo = ref2[o];
           if (active_combo === void 0 || indexOf.call(combos, active_combo) >= 0) {
             continue;
           }
@@ -910,15 +892,6 @@ Combo options available and their defaults:
         break;
       }
     }
-    if (!valid) {
-      for (_ in _keycode_shifted_keys) {
-        valid_key = _keycode_shifted_keys[_];
-        if (key === valid_key) {
-          valid = true;
-          break;
-        }
-      }
-    }
     return valid;
   };
 
@@ -959,18 +932,6 @@ Combo options available and their defaults:
     return validated;
   };
 
-  _convert_to_shifted_key = function(key, e) {
-    var k;
-    if (!e.shiftKey) {
-      return false;
-    }
-    k = _keycode_shifted_keys[key];
-    if (k != null) {
-      return k;
-    }
-    return false;
-  };
-
   _modifier_event_mapping = {
     "cmd": "metaKey",
     "ctrl": "ctrlKey",
@@ -993,32 +954,6 @@ Combo options available and their defaults:
     "scroll_lock": "scroll",
     "num_lock": "num"
   };
-
-  _keycode_shifted_keys = {
-    "/": "?",
-    ".": ">",
-    ",": "<",
-    "\'": "\"",
-    ";": ":",
-    "[": "{",
-    "]": "}",
-    "\\": "|",
-    "`": "~",
-    "=": "+",
-    "-": "_",
-    "1": "!",
-    "2": "@",
-    "3": "#",
-    "4": "$",
-    "5": "%",
-    "6": "^",
-    "7": "&",
-    "8": "*",
-    "9": "(",
-    "0": ")"
-  };
-
-  _keycode_shifted_targets = ["?", ">", "<", "\"", ":", "{", "}", "|", "~", "+", "_", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")"];
 
   _keycode_dictionary = {
     0: "\\",

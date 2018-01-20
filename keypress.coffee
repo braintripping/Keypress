@@ -401,9 +401,6 @@ class keypress.Listener
         return keys_remain
 
     _key_down: (key, e) ->
-        # Check if we're holding shift
-        shifted_key = _convert_to_shifted_key key, e
-        key = shifted_key if shifted_key
 
         # Add the key to sequences
         @_add_key_to_sequence key, e
@@ -478,16 +475,6 @@ class keypress.Listener
                 @_fire "keydown", combo, e, is_autorepeat
 
     _key_up: (key, e) ->
-        # Check if we're holding shift
-        unshifted_key = key
-        shifted_key = _convert_to_shifted_key key, e
-        key = shifted_key if shifted_key
-        # shifted_key = _keycode_shifted_keys[unshifted_key]
-        # We have to make sure the key matches to what we had in _keys_down
-        if e.shiftKey
-            key = unshifted_key unless shifted_key and shifted_key in @_keys_down
-        else
-            key = shifted_key unless unshifted_key and unshifted_key in @_keys_down
 
         # Check if we have a keyup firing
         sequence_combo = @_get_sequence key
@@ -496,7 +483,7 @@ class keypress.Listener
         # Remove from the list
         return false unless key in @_keys_down
         for i in [0...@_keys_down.length]
-            if @_keys_down[i] in [key, shifted_key, unshifted_key]
+            if @_keys_down[i] == key
                 @_keys_down.splice i, 1
                 break
 
@@ -708,11 +695,6 @@ _key_is_valid = (key) ->
         if key is valid_key
             valid = true
             break
-    unless valid
-        for _, valid_key of _keycode_shifted_keys
-            if key is valid_key
-                valid = true
-                break
     return valid
 
 _validate_combo = (combo) ->
@@ -753,12 +735,6 @@ _validate_combo = (combo) ->
 
     return validated
 
-_convert_to_shifted_key = (key, e) ->
-    return false unless e.shiftKey
-    k = _keycode_shifted_keys[key]
-    return k if k?
-    return false
-
 ##########################
 # Key Mapping Dictionaries
 ##########################
@@ -783,31 +759,6 @@ _keycode_alternate_names =
     "accent"        : "`"
     "scroll_lock"   : "scroll"
     "num_lock"      : "num"
-
-_keycode_shifted_keys =
-    "/"     : "?"
-    "."     : ">"
-    ","     : "<"
-    "\'"    : "\""
-    ";"     : ":"
-    "["     : "{"
-    "]"     : "}"
-    "\\"    : "|"
-    "`"     : "~"
-    "="     : "+"
-    "-"     : "_"
-    "1"     : "!"
-    "2"     : "@"
-    "3"     : "#"
-    "4"     : "$"
-    "5"     : "%"
-    "6"     : "^"
-    "7"     : "&"
-    "8"     : "*"
-    "9"     : "("
-    "0"     : ")"
-
-_keycode_shifted_targets = ["?", ">", "<", "\"", ":", "{", "}", "|", "~", "+", "_", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")"]
 
 _keycode_dictionary =
     0   : "\\"          # Firefox reports this keyCode when shift is held
