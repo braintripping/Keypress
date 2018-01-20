@@ -54,11 +54,23 @@ _modifier_keys = ["meta", "alt", "option", "ctrl", "shift", "cmd"]
 
 _metakey = "ctrl"
 
-isSubsetOf = (a1, a2) ->
-    for item in a1
-        if a2.indexOf(a1) < 0
-            return false
-    true
+normalize_combo = (keys_or_combo) ->
+    if typeof keys_or_combo is "string"
+        keys_or_combo = keys_or_combo.split " "
+    if Array.isArray(keys_or_combo)
+        # Convert "meta" to either "ctrl" or "cmd"
+        # Don't explicity use the command key, it breaks
+        # because it is the windows key in Windows, and
+        # cannot be hijacked.
+        for i in [0...keys_or_combo.length]
+            key = keys_or_combo[i]
+            # Check the name and replace if needed
+            alt_name = _keycode_alternate_names[key]
+            key = keys_or_combo[i] = alt_name if alt_name
+            if key is "meta"
+                keys_or_combo.splice i, 1, _metakey
+            if key is "cmd"
+                _log_error "Warning: use the \"meta\" key rather than \"cmd\" for Windows compatibility"
 
 ###########################
 # Public object and Classes
@@ -89,6 +101,11 @@ class Combo
 
 class keypress.Listener
     constructor:(element, defaults) ->
+        # jQuery proofing
+        if jQuery? and element instanceof jQuery
+            if element.length != 1
+                _log_error "Warning: your jQuery selector should have exactly one object."
+            element = element[0]
 
         # Public properties
         @should_suppress_event_defaults = false
@@ -98,7 +115,6 @@ class keypress.Listener
         # Private properties
         @_registered_combos = []
         @_keys_down = []
-        @_down_mappings = {}
         @_active_combos = []
         @_sequence = []
         @_sequence_timer = null
@@ -111,6 +127,7 @@ class keypress.Listener
         @element = element or document.body
 
         attach_handler = (target, event, handler) ->
+            # MH: use google closure listening, for capture phase
             goog.events.listen target, event, handler, true
 
             return handler
@@ -133,10 +150,8 @@ class keypress.Listener
 
     destroy: () ->
         remove_handler = (target, event, handler) ->
-            if target.removeEventListener?
-                target.removeEventListener event, handler
-            else if target.removeEvent?
-                target.removeEvent "on#{event}", handler
+            # MH: use google closure listening, for capture phase
+            goog.events.unlisten target, event, handler, true
 
         remove_handler @element, "keydown", @keydown_event
         remove_handler @element, "keyup", @keyup_event
@@ -158,7 +173,10 @@ class keypress.Listener
         # is pressed, but cmd isn't in them. This is so they don't
         # accidentally rapid fire due to our hack-around for the cmd
         # key bug and having to fake keyups.
-        if _metakey is "cmd" and "cmd" in @_keys_down and "cmd" not in combo_keys and combo_keys.length > 1
+        if _metakey is "cmd" and
+          "cmd" in @_keys_down and
+          "cmd" not in combo_keys and
+          combo_keys.length > 1 # MH: allow single-key combos while command key is down
             return false
         return true
 
@@ -420,7 +438,6 @@ class keypress.Listener
 
         if key not in @_keys_down
             @_keys_down.push key
-            @_down_mappings[e.keyCode] = key
         return
 
     _handle_combo_down: (combo, potential_combos, key, e) ->
@@ -463,25 +480,25 @@ class keypress.Listener
         # Check if we're holding shift
         unshifted_key = key
         shifted_key = _convert_to_shifted_key key, e
-
-        if e.shiftKey and shifted_key and (shifted_key in @_keys_down)
-            key = shifted_key
+        key = shifted_key if shifted_key
+        # shifted_key = _keycode_shifted_keys[unshifted_key]
+        # We have to make sure the key matches to what we had in _keys_down
+        if e.shiftKey
+            key = unshifted_key unless shifted_key and shifted_key in @_keys_down
+        else
+            key = shifted_key unless unshifted_key and unshifted_key in @_keys_down
 
         # Check if we have a keyup firing
         sequence_combo = @_get_sequence key
         @_fire("keyup", sequence_combo, e) if sequence_combo
 
         # Remove from the list
-        key_here = e.keyCode of @_down_mappings
-        for item in [key, shifted_key, unshifted_key]
-            key_here = true if item in @_keys_down
-        return false unless key_here
-
+        return false unless key in @_keys_down
         for i in [0...@_keys_down.length]
-            if @_keys_down[i] in [key, shifted_key, unshifted_key, @_down_mappings[e.keyCode]]
+            if @_keys_down[i] in [key, shifted_key, unshifted_key]
                 @_keys_down.splice i, 1
                 break
-        delete @_down_mappings[e.keyCode]
+
         # Store this for later cleanup
         active_combos_length = @_active_combos.length
 
@@ -574,6 +591,8 @@ class keypress.Listener
     unregister_combo: (keys_or_combo) ->
         return false unless keys_or_combo
 
+        normalize_combo(keys_or_combo)
+
         unregister_combo = (combo) =>
             for i in [0...@_registered_combos.length]
                 if combo is @_registered_combos[i]
@@ -583,11 +602,6 @@ class keypress.Listener
         if keys_or_combo instanceof Combo
             unregister_combo keys_or_combo
         else
-            if typeof keys_or_combo is "string"
-                keys_or_combo = keys_or_combo.split " "
-                for i in [0...keys_or_combo.length]
-                    if keys_or_combo[i] == "meta"
-                        keys_or_combo[i] = _metakey
             for combo in @_registered_combos
                 continue unless combo?
                 if (combo.is_unordered and _compare_arrays(keys_or_combo, combo.keys)) or (not combo.is_unordered and _compare_arrays_sorted(keys_or_combo, combo.keys))
@@ -707,19 +721,7 @@ _validate_combo = (combo) ->
     unless combo.keys.length
         _log_error "You're trying to bind a combo with no keys:", combo
 
-    # Convert "meta" to either "ctrl" or "cmd"
-    # Don't explicity use the command key, it breaks
-    # because it is the windows key in Windows, and
-    # cannot be hijacked.
-    for i in [0...combo.keys.length]
-        key = combo.keys[i]
-        # Check the name and replace if needed
-        alt_name = _keycode_alternate_names[key]
-        key = combo.keys[i] = alt_name if alt_name
-        if key is "meta"
-            combo.keys.splice i, 1, _metakey
-        if key is "cmd"
-            _log_error "Warning: use the \"meta\" key rather than \"cmd\" for Windows compatibility"
+    normalize_combo(combo.keys)
 
     # Check that all keys in the combo are valid
     for key in combo.keys
@@ -730,6 +732,8 @@ _validate_combo = (combo) ->
     # We can only allow a single non-modifier key
     # in combos that include the command key (this
     # includes 'meta') because of the keyup bug.
+
+    # MH: "meta" should never occur here because it is rewritten in normalize_combo
     if "meta" in combo.keys or "cmd" in combo.keys
         non_modifier_keys = combo.keys.slice()
         for mod_key in _modifier_keys
@@ -750,11 +754,9 @@ _validate_combo = (combo) ->
 
 _convert_to_shifted_key = (key, e) ->
     return false unless e.shiftKey
-
-    if e.key? and e.key of _keycode_shifted_key_targets
-        return e.key
-    else
-        return _keycode_shifted_keys[key] or false
+    k = _keycode_shifted_keys[key]
+    return k if k?
+    return false
 
 ##########################
 # Key Mapping Dictionaries
@@ -804,28 +806,7 @@ _keycode_shifted_keys =
     "9"     : "("
     "0"     : ")"
 
-_keycode_shifted_key_targets =
-    "?"     : true
-    ">"     : true
-    "<"     : true
-    "\\"    : true
-    ":"     : true
-    "{"     : true
-    "}"     : true
-    "|"     : true
-    "~"     : true
-    "+"     : true
-    "_"     : true
-    "!"     : true
-    "@"     : true
-    "#"     : true
-    "$"     : true
-    "%"     : true
-    "^"     : true
-    "&"     : true
-    "*"     : true
-    "("     : true
-    ")"     : true
+_keycode_shifted_targets = ["?", ">", "<", "\"", ":", "{", "}", "|", "~", "+", "_", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")"]
 
 _keycode_dictionary =
     0   : "\\"          # Firefox reports this keyCode when shift is held
