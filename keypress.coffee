@@ -210,7 +210,7 @@ class keypress.Listener
         # Get fuzzy matches
         @_fuzzy_match_combo_arrays keys_down, (match) =>
             return if match in active_combos
-            active_combos.push(match) unless match.is_solitary or not @_cmd_bug_check match.keys
+            active_combos.push(match) unless not @_cmd_bug_check match.keys
 
         return active_combos
 
@@ -401,11 +401,6 @@ class keypress.Listener
         return keys_remain
 
     _key_down: (key, e) ->
-
-        # Add the key to sequences
-        @_add_key_to_sequence key, e
-        sequence_combo = @_get_sequence key
-        @_fire("keydown", sequence_combo, e) if sequence_combo
 
         # We might have modifier keys down when coming back to
         # this window and they might not be in _keys_down, so
