@@ -198,19 +198,15 @@ class keypress.Listener
 
         active_combos = []
 
-        # First check that every key in keys_down maps to a combo
+        # Remove non-modifier keys
         keys_down = _filter_array @_keys_down, (down_key) ->
-            down_key isnt key
+          down_key isnt key and down_key in _modifier_keys
+
         keys_down.push key
 
         # Get perfect matches
         @_match_combo_arrays keys_down, (match) =>
             active_combos.push(match) if @_cmd_bug_check match.keys
-
-        # Get fuzzy matches
-        @_fuzzy_match_combo_arrays keys_down, (match) =>
-            return if match in active_combos
-            active_combos.push(match) unless not @_cmd_bug_check match.keys
 
         return active_combos
 

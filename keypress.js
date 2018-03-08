@@ -213,22 +213,12 @@ Combo options available and their defaults:
       var active_combos, keys_down;
       active_combos = [];
       keys_down = _filter_array(this._keys_down, function(down_key) {
-        return down_key !== key;
+        return down_key !== key && indexOf.call(_modifier_keys, down_key) >= 0;
       });
       keys_down.push(key);
       this._match_combo_arrays(keys_down, (function(_this) {
         return function(match) {
           if (_this._cmd_bug_check(match.keys)) {
-            return active_combos.push(match);
-          }
-        };
-      })(this));
-      this._fuzzy_match_combo_arrays(keys_down, (function(_this) {
-        return function(match) {
-          if (indexOf.call(active_combos, match) >= 0) {
-            return;
-          }
-          if (!!_this._cmd_bug_check(match.keys)) {
             return active_combos.push(match);
           }
         };
