@@ -228,7 +228,7 @@ Combo options available and their defaults:
           if (indexOf.call(active_combos, match) >= 0) {
             return;
           }
-          if (!(match.is_solitary || !_this._cmd_bug_check(match.keys))) {
+          if (!!_this._cmd_bug_check(match.keys)) {
             return active_combos.push(match);
           }
         };
@@ -501,12 +501,7 @@ Combo options available and their defaults:
     };
 
     Listener.prototype._key_down = function(key, e) {
-      var combo, combos, event_mod, i, l, len, len1, m, mod, n, potential, potential_combos, ref, sequence_combo;
-      this._add_key_to_sequence(key, e);
-      sequence_combo = this._get_sequence(key);
-      if (sequence_combo) {
-        this._fire("keydown", sequence_combo, e);
-      }
+      var combo, combos, event_mod, i, l, len, len1, m, mod, n, potential, potential_combos, ref;
       for (mod in _modifier_event_mapping) {
         event_mod = _modifier_event_mapping[mod];
         if (!e[event_mod]) {
